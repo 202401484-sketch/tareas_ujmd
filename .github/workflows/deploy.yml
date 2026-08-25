@@ -1,0 +1,64 @@
+name: Deploy to Supabase
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'supabase/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy Database Changes
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link Supabase project
+        run: |
+          supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Push database migrations
+        run: |
+          supabase db push
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+
+      - name: Apply database objects (functions, procedures, views)
+        run: |
+          OBJECT_DIRS="supabase/objects/functions supabase/objects/procedures supabase/objects/views"
+          for DIR in $OBJECT_DIRS; do
+            if [ -d "$DIR" ]; then
+              echo "Applying objects in $DIR..."
+              for FILE in $(find "$DIR" -name "*.sql" | sort); do
+                echo "  -> $FILE"
+                SQL=$(cat "$FILE")
+                RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+                  "https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query" \
+                  -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
+                  -H "Content-Type: application/json" \
+                  -d "{\"query\": $(echo "$SQL" | jq -Rs .)}")
+                HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+                BODY=$(echo "$RESPONSE" | head -1)
+                echo "    HTTP $HTTP_CODE: $BODY"
+                if [[ "$HTTP_CODE" != 2* ]]; then
+                  echo "ERROR: Failed to apply $FILE"
+                  exit 1
+                fi
+              done
+            fi
+          done
+        env:
+          PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
