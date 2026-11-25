@@ -1,0 +1,52 @@
+table 'public catalogo'
+	lineageTag: 63485adc-e80e-4b23-a4c0-5a2436b19793
+
+	column producto_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 18db11a7-b8cb-46f2-a025-6ec5825882d2
+		summarizeBy: none
+		sourceColumn: producto_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column nombre
+		dataType: string
+		lineageTag: d7eabcef-5118-4943-9d98-4f4e99d7df44
+		summarizeBy: none
+		sourceColumn: nombre
+
+		annotation SummarizationSetBy = Automatic
+
+	column categoria
+		dataType: string
+		lineageTag: 81bafcc1-cc8f-4c54-8a2c-9139906fb094
+		summarizeBy: none
+		sourceColumn: categoria
+
+		annotation SummarizationSetBy = Automatic
+
+	column precio_lista
+		dataType: double
+		lineageTag: e60b24c0-9a19-4ae8-8dae-cebdae8d3fbb
+		summarizeBy: none
+		sourceColumn: precio_lista
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition 'public catalogo' = m
+		mode: import
+		source =
+				let
+				    Origen = PostgreSQL.Database("ep-square-haze-bdlogydg-pooler.c-8.us-east-2.aws.neon.tech", "cine"),
+				    public_catalogo = Origen{[Schema="public",Item="catalogo"]}[Data],
+				    #"Filas filtradas" = Table.SelectRows(public_catalogo, each ([producto_id] <> 7 and [producto_id] <> 8 and [producto_id] <> 9 and [producto_id] <> 10))
+				in
+				    #"Filas filtradas"
+
+	annotation PBI_NavigationStepName = Navegación
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,105 @@
+table 'public operaciones'
+	lineageTag: 64878546-a074-4214-932c-cd0901cb3b9c
+
+	column operacion_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 3190b8a2-5b3f-499b-a8a6-320be64efff7
+		summarizeBy: none
+		sourceColumn: operacion_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column cliente_id
+		dataType: int64
+		formatString: 0
+		lineageTag: b69c749d-4a54-4af1-875e-631fe3f67f45
+		summarizeBy: none
+		sourceColumn: cliente_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column sede_id
+		dataType: int64
+		formatString: 0
+		lineageTag: f7f99b12-874b-46a5-8b0d-b2d403f67992
+		summarizeBy: none
+		sourceColumn: sede_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column fecha
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 99ca5348-0b4f-4498-addb-bcfcaedc530f
+		summarizeBy: none
+		sourceColumn: fecha
+
+		variation Variación
+			isDefault
+			relationship: 07328ce0-f78e-40cf-b039-987020b1d983
+			defaultHierarchy: LocalDateTable_c2b9730a-765b-4ab5-9fe0-86446aa1521a.'Jerarquía de fechas'
+
+		annotation SummarizationSetBy = Automatic
+
+	column estado
+		dataType: string
+		lineageTag: 65960f33-5d7b-44b8-8169-374574fc3d06
+		summarizeBy: none
+		sourceColumn: estado
+
+		annotation SummarizationSetBy = Automatic
+
+	column canal
+		dataType: string
+		lineageTag: 930abfdb-4ae1-4c67-a287-4768c6ca9423
+		summarizeBy: none
+		sourceColumn: canal
+
+		annotation SummarizationSetBy = Automatic
+
+	column actualizado_en
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: ec899334-c0d2-4ff3-ae19-340defe46146
+		summarizeBy: none
+		sourceColumn: actualizado_en
+
+		variation Variación
+			isDefault
+			relationship: d8e87506-90d7-4d3f-9951-07339b19c9d3
+			defaultHierarchy: LocalDateTable_231eb275-2e1c-41e2-9938-881ce4419950.'Jerarquía de fechas'
+
+		annotation SummarizationSetBy = Automatic
+
+	column Mes = DATE(YEAR('public operaciones'[fecha]), MONTH('public operaciones'[fecha]), 1)
+		formatString: mmmm yyyy
+		lineageTag: 9f8bd6cc-d22d-4be2-ac17-55d9db270e65
+		summarizeBy: none
+
+		variation Variación
+			isDefault
+			relationship: 25c99805-e816-41d6-b225-57441f0d2295
+			defaultHierarchy: LocalDateTable_6d03a0ce-1fb6-4129-b9c7-c58cd11cca8c.'Jerarquía de fechas'
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isDateTimeCustom":true}
+
+	partition 'public operaciones' = m
+		mode: import
+		source =
+				let
+				    Origen = PostgreSQL.Database("ep-square-haze-bdlogydg-pooler.c-8.us-east-2.aws.neon.tech", "cine"),
+				    public_operaciones = Origen{[Schema="public",Item="operaciones"]}[Data],
+				    #"Texto recortado" = Table.TransformColumns(public_operaciones,{{"estado", Text.Trim, type text}}),
+				    #"Texto en minúsculas" = Table.TransformColumns(#"Texto recortado",{{"estado", Text.Lower, type text}}),
+				    #"Filas filtradas" = Table.SelectRows(#"Texto en minúsculas", each ([estado] = "anulado" or [estado] = "cancelada" or [estado] = "completada" or [estado] = "pendiente")),
+				    #"Duplicados quitados" = Table.Distinct(#"Filas filtradas", {"operacion_id"})
+				in
+				    #"Duplicados quitados"
+
+	annotation PBI_NavigationStepName = Navegación
+
+	annotation PBI_ResultType = Table
+

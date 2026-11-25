@@ -1,0 +1,57 @@
+table 'public clientes'
+	lineageTag: d67122cf-9789-429e-8c81-ac3b1aec7a1e
+
+	column cliente_id
+		dataType: int64
+		formatString: 0
+		lineageTag: f51c23bf-eca6-435f-b82b-e08da6207c4e
+		summarizeBy: none
+		sourceColumn: cliente_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column nombre
+		dataType: string
+		lineageTag: 9666e073-ffea-49cc-9b8a-9ccfaa18a006
+		summarizeBy: none
+		sourceColumn: nombre
+
+		annotation SummarizationSetBy = Automatic
+
+	column segmento
+		dataType: string
+		lineageTag: 8b367833-8bb3-43af-ab7a-4bd918d2b0bb
+		summarizeBy: none
+		sourceColumn: segmento
+
+		annotation SummarizationSetBy = Automatic
+
+	column fecha_registro
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: b16382ba-0ab9-4092-aed4-79b30d6a62ff
+		summarizeBy: none
+		sourceColumn: fecha_registro
+
+		variation Variación
+			isDefault
+			relationship: d37a44f0-955b-4b39-8d99-b5a13b39ed6b
+			defaultHierarchy: LocalDateTable_2fbbf49a-69ed-4ab7-b1f4-bbe537cf038e.'Jerarquía de fechas'
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	partition 'public clientes' = m
+		mode: import
+		source =
+				let
+				    Origen = PostgreSQL.Database("ep-square-haze-bdlogydg-pooler.c-8.us-east-2.aws.neon.tech", "cine"),
+				    public_clientes = Origen{[Schema="public",Item="clientes"]}[Data]
+				in
+				    public_clientes
+
+	annotation PBI_NavigationStepName = Navegación
+
+	annotation PBI_ResultType = Table
+

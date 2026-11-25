@@ -1,0 +1,41 @@
+table 'public sedes'
+	lineageTag: 05889ad2-687f-4f4a-8762-4e588cab27e6
+
+	column sede_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 75292be0-8f3d-4a6d-b173-f93e9f707739
+		summarizeBy: none
+		sourceColumn: sede_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column nombre
+		dataType: string
+		lineageTag: eb274382-86a1-4e0f-b609-e908fb90f166
+		summarizeBy: none
+		sourceColumn: nombre
+
+		annotation SummarizationSetBy = Automatic
+
+	column ciudad
+		dataType: string
+		lineageTag: 6f6a9cf3-ba09-4eff-a59c-033efc0f5478
+		summarizeBy: none
+		sourceColumn: ciudad
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'public sedes' = m
+		mode: import
+		source =
+				let
+				    Origen = PostgreSQL.Database("ep-square-haze-bdlogydg-pooler.c-8.us-east-2.aws.neon.tech", "cine"),
+				    public_sedes = Origen{[Schema="public",Item="sedes"]}[Data]
+				in
+				    public_sedes
+
+	annotation PBI_NavigationStepName = Navegación
+
+	annotation PBI_ResultType = Table
+
